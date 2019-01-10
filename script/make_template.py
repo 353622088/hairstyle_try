@@ -39,6 +39,9 @@ def get_landmark_dict(file_path):
 
 
 if __name__ == '__main__':
+    '''
+    将上传模板标准处理化
+    '''
     root_dir = 'C:/Users/chk01/Desktop/Templates/temp2'
     back_file = os.path.join(root_dir, 'ori.jpg')
     get_landmark_dict(back_file)

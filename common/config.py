@@ -16,7 +16,7 @@ bucket = 'face-recognize'
 tx_client = Client(appid, secret_id, secret_key, bucket)
 tx_client.use_http()
 tx_client.set_timeout(30)
-
+DESKTOP = 'C:/Users/chk01/Desktop'
 # APP_ID = '10365287'
 # API_KEY = 'G7q4m36Yic1vpFCl5t46yH5K'
 # SECRET_KEY = 'MneS2GDvPQ5QsGpVtSaHXGAlvwHu1XnC '

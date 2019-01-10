@@ -110,4 +110,4 @@ print(len(extra_piece))
 triangle = extra_piece + left_eye_piece + right_eye_piece + nose_piece + left_eyebrow_piece + right_eyebrow_piece + mouth_piece + face_piece
 print(len(triangle))
 # triangle= extra_piece + left_eye_piece
-scio.savemat("../triangle_matrix", {"triangle": triangle})
+scio.savemat("triangle_matrix", {"triangle": triangle})
