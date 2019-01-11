@@ -303,24 +303,23 @@ def tran_src(tree_img, alpha_tree_img, tree_points, orange_points):
     """
     tree_list = np.vstack([tree_points, np.int32(1.0 * np.array([
         # [x, y], [x + w, y], [x + w, y + h], [x, y + h],
-        [300, 300], [700, 300], [700, 750], [300, 750],
+        [200, 200], [800, 200], [800, 850], [200, 850],
         [0, 0], [999, 0], [999, 999], [0, 999],
-        [500, 300], [700, 525], [500, 750], [300, 525],
+        [500, 200], [800, 525], [500, 850], [200, 525],
         # [x + w / 2, y], [x + w, y + h / 2], [x + w / 2, y + h], [x, y + h / 2]
     ]
     ))])
     orange_list = np.vstack([orange_points, np.int32(1.0 * np.array([
         # [x, y], [x + w, y], [x + w, y + h], [x, y + h],
-        [300, 300], [700, 300], [700, 750], [300, 750],
+        [200, 200], [800, 200], [800, 850], [200, 850],
         [0, 0], [999, 0], [999, 999], [0, 999],
-        [500, 300], [700, 525], [500, 750], [300, 525],
+        [500, 200], [800, 525], [500, 850], [200, 525],
         # [x + w / 2, y], [x + w, y + h / 2], [x + w / 2, y + h], [x, y + h / 2]
     ]
     ))])
     res_img = np.zeros(tree_img.shape, dtype=tree_img.dtype)
     alpha_res_img = np.zeros(alpha_tree_img.shape, dtype=alpha_tree_img.dtype) if alpha_tree_img else ''
     dt = get_measure_triangle()
-    # [25:]
     for i in range(0, len(dt)):
         t_src = []
         t_dst = []
@@ -340,7 +339,7 @@ def merge_img(orange_img, tree_img, face_mask, orange_points):
 
     center = (r[0] + int(r[2] / 2), r[1] + int(int(r[3] / 2)))
 
-    mat = cv2.getRotationMatrix2D(center, 0, .85)
+    mat = cv2.getRotationMatrix2D(center, 0, .9)
     face_mask = cv2.warpAffine(face_mask, mat, (face_mask.shape[1], face_mask.shape[0]))
     # face_mask = cv2.blur(face_mask, (3, 3))
     # face_mask = cv2.GaussianBlur(face_mask, (27, 27), 1)
@@ -444,7 +443,7 @@ def fusion(orange_path, orange_dict, temp_id, ifsave=True):
 
     # 将orange目标区域扣取1出来，进行比例重组
     orange_mask_trans, morph_points, orange_mask = morph_img(tree, arr_point_tree, orange_trans, arr_point_orange_trans,
-                                                             alpha=[0, 0, 0, .85])  # 眼睛，脸，other
+                                                             alpha=[0.2, 0.2, 0.2, .85])  # 眼睛，脸，other
     save_img(orange_mask_trans, '4-orange_mask_trans.png'.format(file_name), ifsave)
     # 将Tree进行形变（主要是脸型轮廓）
     tree_trans, alpha_tree_trans = tran_src(tree, '', arr_point_tree, morph_points)
@@ -459,11 +458,11 @@ def fusion(orange_path, orange_dict, temp_id, ifsave=True):
 
 if __name__ == '__main__':
     root_dir = os.path.join(Desktop, "Templates", "test_samples")
-    test_file = os.path.join(root_dir, '3.png')
+    test_file = os.path.join(root_dir, '1.png')
     landmark_dict_orange = get_landmark_dict(test_file)
-    temp_id = 'temp5'
+    temp_id = 'temp1'
 
     res = fusion(test_file, landmark_dict_orange, temp_id)
 
-    save_path = os.path.join(root_dir, '3-{}.jpg'.format(temp_id))
+    save_path = os.path.join(root_dir, '1-{}.jpg'.format(temp_id))
     save_img(res, save_path, True)
