@@ -147,6 +147,12 @@ def get_measure_triangle():
 
 
 @time_cal
+def get_measure_triangle_skin():
+    triangles = scio.loadmat("triangle_matrix_skin_nose.mat")['triangle']
+    return [list(t.astype(np.int32)) for t in triangles]
+
+
+@time_cal
 def affine_transform(src, src_tri, dst_tri, size):
     warp_mat = cv2.getAffineTransform(np.float32(src_tri), np.float32(dst_tri))
     # warp_mat = cv2.estimateRigidTransform(np.array(src_tri), np.array(dst_tri), True)
@@ -159,7 +165,7 @@ def affine_transform(src, src_tri, dst_tri, size):
 
 
 @time_cal
-def morph_triangle(src, dst, img, face_mask, t_src, t_dst, t, alpha):
+def morph_triangle(src, dst, img, face_mask, t_src, t_dst, t, base_alpha, step=0):
     # t_src, t_dst, t
     # 分别为特征点的三角形坐标
 
@@ -189,7 +195,21 @@ def morph_triangle(src, dst, img, face_mask, t_src, t_dst, t, alpha):
 
     warp_img_src = affine_transform(img1_rect, t1_rect, t_rect, size)
     warp_img_dst = affine_transform(img2_rect, t2_rect, t_rect, size)
-
+    # alpha = 0.5 if step > 49 else alpha
+    if step < 16:
+        # print('眼睛')
+        alpha = min(1.25 * base_alpha, 1.0)
+    elif step < 28:
+        # print('鼻子')
+        alpha = min(1.0 * base_alpha, 1.0)
+    elif step < 40:
+        # print('眉毛')
+        alpha = min(1.13 * base_alpha, 1.0)
+    elif step < 50:
+        # print('眉毛')
+        alpha = min(1.25 * base_alpha, 1.0)
+    else:
+        alpha = min(1.0 * base_alpha, 1.0)
     img_rect = (1.0 - alpha) * warp_img_src + alpha * warp_img_dst
     img[r[1]:r[1] + r[3], r[0]:r[0] + r[2]] = img[r[1]:r[1] + r[3], r[0]:r[0] + r[2]] * (1 - mask) + img_rect * mask
 
@@ -202,7 +222,6 @@ def morph_triangle(src, dst, img, face_mask, t_src, t_dst, t, alpha):
 def affine_triangle(src, src2, dst, dst2, t_src, t_dst):
     r1 = cv2.boundingRect(np.float32([t_src]))
     r2 = cv2.boundingRect(np.float32([t_dst]))
-
     t1_rect = []
     t2_rect = []
     t2_rect_int = []
@@ -214,10 +233,8 @@ def affine_triangle(src, src2, dst, dst2, t_src, t_dst):
 
     mask = np.zeros((r2[3], r2[2], 3), dtype=np.float32)
     cv2.fillConvexPoly(mask, np.int32(t2_rect_int), (1.0, 1.0, 1.0))
-
     img1_rect = src[r1[1]:r1[1] + r1[3], r1[0]:r1[0] + r1[2]]
     size = (r2[2], r2[3])
-
     if src2:
         alpha_img1_rect = src2[r1[1]:r1[1] + r1[3], r1[0]:r1[0] + r1[2]]
         alpha_img2_rect = affine_transform(alpha_img1_rect, t1_rect, t2_rect, size)
@@ -225,7 +242,8 @@ def affine_triangle(src, src2, dst, dst2, t_src, t_dst):
 
     img2_rect = affine_transform(img1_rect, t1_rect, t2_rect, size)
     img2_rect = img2_rect * mask
-
+    # (1620, 280, 3)
+    # (800, 0, 820, 1620)
     dst[r2[1]:r2[1] + r2[3], r2[0]:r2[0] + r2[2]] = dst[r2[1]:r2[1] + r2[3], r2[0]:r2[0] + r2[2]] * (
             (1.0, 1.0, 1.0) - mask)
 
@@ -286,7 +304,7 @@ def morph_img(tree_img, tree_points, orange_img, orange_points, alpha):
             t2.append(orange_points[dt[i][j]])
             t.append(mask_points[dt[i][j]])
 
-        _, face_maskk = morph_triangle(tree_img, orange_img, res_img, _face_mask, t1, t2, t, alpha[3])
+        _, face_maskk = morph_triangle(tree_img, orange_img, res_img, _face_mask, t1, t2, t, alpha[3], i)
 
     return res_img, morph_points_, face_maskk
 
@@ -301,22 +319,25 @@ def tran_src(tree_img, alpha_tree_img, tree_points, orange_points):
     :param face_area:
     :return:
     """
-    tree_list = np.vstack([tree_points, np.int32(1.0 * np.array([
-        # [x, y], [x + w, y], [x + w, y + h], [x, y + h],
-        [200, 200], [800, 200], [800, 850], [200, 850],
-        [0, 0], [999, 0], [999, 999], [0, 999],
-        [500, 200], [800, 525], [500, 850], [200, 525],
-        # [x + w / 2, y], [x + w, y + h / 2], [x + w / 2, y + h], [x, y + h / 2]
-    ]
-    ))])
-    orange_list = np.vstack([orange_points, np.int32(1.0 * np.array([
-        # [x, y], [x + w, y], [x + w, y + h], [x, y + h],
-        [200, 200], [800, 200], [800, 850], [200, 850],
-        [0, 0], [999, 0], [999, 999], [0, 999],
-        [500, 200], [800, 525], [500, 850], [200, 525],
-        # [x + w / 2, y], [x + w, y + h / 2], [x + w / 2, y + h], [x, y + h / 2]
-    ]
-    ))])
+    h, w, c = tree_img.shape
+    h -= 1
+    w -= 1
+    mask_area = cv2.boundingRect(np.float32([orange_points]))
+    start_x = max(.9 * mask_area[0], 1)
+    start_y = max(.9 * mask_area[1], 1)
+    end_x = min(start_x + 1.2 * mask_area[2], w - 10)
+    end_y = min(start_y + 1.2 * mask_area[3], h - 10)
+
+    sum_x = start_x + end_x
+    sum_y = start_y + end_y
+    bound_area = np.int32([
+        [start_x, start_y], [end_x, start_y], [end_x, end_y], [start_x, end_y],
+        [0, 0], [w, 0], [w, h], [0, h],
+        [0.5 * sum_x, start_y], [end_x, 0.5 * sum_y], [0.5 * sum_x, end_y], [start_x, 0.5 * sum_y]
+    ])
+
+    tree_list = np.vstack([tree_points, bound_area])
+    orange_list = np.vstack([orange_points, bound_area])
     res_img = np.zeros(tree_img.shape, dtype=tree_img.dtype)
     alpha_res_img = np.zeros(alpha_tree_img.shape, dtype=alpha_tree_img.dtype) if alpha_tree_img else ''
     dt = get_measure_triangle()
@@ -334,12 +355,12 @@ def tran_src(tree_img, alpha_tree_img, tree_points, orange_points):
 
 
 @time_cal
-def merge_img(orange_img, tree_img, face_mask, orange_points):
+def merge_img(orange_img, tree_img, face_mask, orange_points, mat_rate=.88):
     r = cv2.boundingRect(np.float32([orange_points]))
 
     center = (r[0] + int(r[2] / 2), r[1] + int(int(r[3] / 2)))
 
-    mat = cv2.getRotationMatrix2D(center, 0, .9)
+    mat = cv2.getRotationMatrix2D(center, 0, mat_rate)
     face_mask = cv2.warpAffine(face_mask, mat, (face_mask.shape[1], face_mask.shape[0]))
     # face_mask = cv2.blur(face_mask, (3, 3))
     # face_mask = cv2.GaussianBlur(face_mask, (27, 27), 1)
@@ -348,7 +369,7 @@ def merge_img(orange_img, tree_img, face_mask, orange_points):
     # face_mask = cv2.erode(face_mask, kernel)  # 腐蚀
     # face_mask = cv2.medianBlur(face_mask, 19)
 
-    return cv2.seamlessClone(np.uint8(orange_img), tree_img, face_mask, center, 2)
+    return cv2.seamlessClone(np.uint8(orange_img), np.uint8(tree_img), face_mask, center, 1)
 
 
 @time_cal
@@ -394,9 +415,104 @@ def resize_img(img_array, fusion_face_wid):
 
 
 @time_cal
+def get_data_analysis(skin_ori):
+    skin_ori_flatten = skin_ori.reshape([-1, 1])
+    skin_ori_index = np.flatnonzero(skin_ori_flatten != 0)
+    skin_ori_value = skin_ori_flatten[skin_ori_index]
+
+    skin_ori_value_max = np.max(skin_ori_value)
+    skin_ori_value_std = np.std(skin_ori_value)
+    skin_ori_value_min = np.min(skin_ori_value)
+    skin_ori_value_mean = np.mean(skin_ori_value)
+
+    return skin_ori_value_mean, skin_ori_value_std, skin_ori_value_max, skin_ori_value_min
+
+
+def make_mask(face_mask, t):
+    #  t
+    # 分别为特征点的三角形坐标
+    r = cv2.boundingRect(np.float32([t]))
+    # 获取三角形的凸包正方形 格式 xmin,ymin,wid,height
+
+    t_rect = []
+    for i in range(0, 3):
+        t_rect.append(((t[i][0] - r[0]), (t[i][1] - r[1])))
+
+    # 将坐标转换为相对正方形左上角坐标
+    mask = np.zeros((r[3], r[2]), dtype=np.float32)
+    # 包含剖分三角形的正方形区域
+    cv2.fillConvexPoly(mask, np.int32(t_rect), 1)
+    # 填充剖分三角形
+
+    face_mask[r[1]:r[1] + r[3], r[0]:r[0] + r[2]] = face_mask[r[1]:r[1] + r[3], r[0]:r[0] + r[2]] * (
+            1 - mask) + 1 * mask
+    return face_mask
+
+
+def get_data_analysis(skin_ori):
+    skin_ori_flatten = skin_ori.reshape([-1, 1])
+    skin_ori_index = np.flatnonzero(skin_ori_flatten != 0)
+    skin_ori_value = skin_ori_flatten[skin_ori_index]
+
+    skin_ori_value_max = np.max(skin_ori_value)
+    skin_ori_value_std = np.std(skin_ori_value)
+    skin_ori_value_min = np.min(skin_ori_value)
+    skin_ori_value_mean = np.mean(skin_ori_value)
+
+    return skin_ori_value_mean, skin_ori_value_std, skin_ori_value_max, skin_ori_value_min
+
+
+def smooth_light(orange_img, arr_point_tree):
+    # 肤色区域
+    dt = get_measure_triangle_skin()[47:]
+    face_mask2 = np.zeros(orange_img.shape[:2], dtype=np.uint8)
+    for i in range(0, len(dt)):
+        t = []
+        for j in range(0, 3):
+            t.append(arr_point_tree[dt[i][j]])
+
+        face_mask = make_mask(face_mask2, t)
+    face_mask = np.array(face_mask, np.float32)
+    orange_img_hsv = cv2.cvtColor(orange_img, cv2.COLOR_BGR2HSV)
+
+    s = np.array(orange_img_hsv[:, :, 1], np.float32)
+    v = np.array(orange_img_hsv[:, :, 2], np.float32)
+
+    s_skin_ori = s * face_mask
+    v_skin_ori = v * face_mask
+
+    s_skin_ori_value_mean, s_skin_ori_value_std, s_skin_ori_value_max, s_skin_ori_value_min = get_data_analysis(
+        s_skin_ori)
+
+    v_skin_ori_value_mean, v_skin_ori_value_std, v_skin_ori_value_max, v_skin_ori_value_min = get_data_analysis(
+        v_skin_ori)
+
+    # 去除不均匀
+    # res_img_h = np.clip((h - h_skin_ori_value_mean) / h_skin_ori_value_std * 20 + 50, 16, 230)
+    res_img_s = np.clip((s - s_skin_ori_value_mean) / s_skin_ori_value_std * 20 + .95 * s_skin_ori_value_mean, 16, 250)
+    res_img_v = np.clip(
+        (v - v_skin_ori_value_mean) / v_skin_ori_value_std * .8 * v_skin_ori_value_std + .95 * v_skin_ori_value_mean,
+        16, 250)
+
+    # 解决太均匀
+    # res_img_s = np.clip(1.1 * res_img_s, 18, 250)
+    # res_img_v = np.clip(1.1 * res_img_v, 18, 250)
+
+    # 赋值回原图
+    orange_img_hsv[:, :, 1] = res_img_s
+    orange_img_hsv[:, :, 2] = res_img_v
+
+    orange_img_hsv2 = cv2.cvtColor(orange_img_hsv, cv2.COLOR_HSV2BGR)
+
+    # 组合成最终图片
+    orange_img_hsv = orange_img * (1 - face_mask[:, :, None]) + orange_img_hsv2 * face_mask[:, :, None]
+    return np.uint8(orange_img_hsv)
+
+
+@time_cal
 def fusion(orange_path, orange_dict, temp_id, ifsave=True):
     file_name = os.path.basename(orange_path).split('.')[0]
-    tree_file = "{}/Templates/{}/back.jpg".format(Desktop, temp_id)
+    tree_file = "{}/Templates/{}/ori.jpg".format(Desktop, temp_id)
     landmark_dict_tree = get_landmark_dict(tree_file)
 
     arr_point_tree, list_point_tree = get_points(landmark_dict_tree)
@@ -411,10 +527,14 @@ def fusion(orange_path, orange_dict, temp_id, ifsave=True):
     # landmark_dict_orange = orange_dict
     arr_point_orange, list_point_orange = get_points(orange_dict)
     orange = cv2.imread(orange_path, cv2.IMREAD_COLOR)
-    orange = cv2.cvtColor(orange, cv2.COLOR_BGR2HSV)
-    orange[:, :, 1] = np.uint8(np.clip(1.1 * np.array(orange[:, :, 1], np.float32), 0, 255))
-    orange[:, :, 2] = np.uint8(np.clip(1.1 * np.array(orange[:, :, 2], np.float32), 0, 255))
-    orange = cv2.cvtColor(orange, cv2.COLOR_HSV2BGR)
+    # from script.mask_face_mask import kk
+    # orange = kk(orange_path)
+    orange = smooth_light(orange, arr_point_orange)
+    save_img(orange, '2-toushied_orange.png', ifsave)
+    # orange = cv2.cvtColor(orange, cv2.COLOR_BGR2HSV)
+    # orange[:, :, 1] = np.uint8(np.clip(1.1 * np.array(orange[:, :, 1], np.float32), 10, 250))
+    # orange[:, :, 2] = np.uint8(np.clip(1.1 * np.array(orange[:, :, 2], np.float32), 10, 250))
+    # orange = cv2.cvtColor(orange, cv2.COLOR_HSV2BGR)
 
     orange, arr_point_orange = toushi_img(orange, arr_point_orange, arr_point_tree, yaw=orange_dict['yaw'])
     save_img(orange, '2-toushied_orange.png', ifsave)
@@ -435,7 +555,7 @@ def fusion(orange_path, orange_dict, temp_id, ifsave=True):
                      [tree_center[0], tree_center[1] - tree_eye_dis]], fullAffine=False)
 
     # 矫正后的orange图
-    orange_trans = cv2.warpAffine(orange, orange2tree_matrix, (tree.shape[0], tree.shape[1]))
+    orange_trans = cv2.warpAffine(orange, orange2tree_matrix, (tree.shape[1], tree.shape[0]))
     save_img(orange_trans, '3-orange_trans.png'.format(file_name), ifsave)
 
     # 矫正后的orange特征点
@@ -443,26 +563,30 @@ def fusion(orange_path, orange_dict, temp_id, ifsave=True):
 
     # 将orange目标区域扣取1出来，进行比例重组
     orange_mask_trans, morph_points, orange_mask = morph_img(tree, arr_point_tree, orange_trans, arr_point_orange_trans,
-                                                             alpha=[0.2, 0.2, 0.2, .85])  # 眼睛，脸，other
+                                                             alpha=[.2, .2, .2, .85])  # 眼睛，脸，other
+
+    save_img(orange_mask, '4-orange_mask.png'.format(file_name), ifsave)
     save_img(orange_mask_trans, '4-orange_mask_trans.png'.format(file_name), ifsave)
     # 将Tree进行形变（主要是脸型轮廓）
     tree_trans, alpha_tree_trans = tran_src(tree, '', arr_point_tree, morph_points)
     save_img(tree_trans, '5-tree_trans.png'.format(file_name), ifsave)
 
-    # tree_trans = cv2.bilateralFilter(tree_trans, 9, 75, 75)
-
-    rgb_img = merge_img(orange_mask_trans, np.uint8(tree_trans), orange_mask, morph_points)
+    rgb_img = merge_img(orange_mask_trans, np.uint8(tree_trans), orange_mask, morph_points, .88)
+    # rgb_img = merge_img(orange_mask_trans, np.uint8(rgb_img), orange_mask, morph_points, .8)
+    # save_img(orange_mask, '6-tree_trans.png'.format(file_name), ifsave)
 
     return rgb_img
 
 
 if __name__ == '__main__':
     root_dir = os.path.join(Desktop, "Templates", "test_samples")
-    test_file = os.path.join(root_dir, '1.png')
+    test_file = os.path.join(root_dir, '9.png')
     landmark_dict_orange = get_landmark_dict(test_file)
-    temp_id = 'temp1'
 
-    res = fusion(test_file, landmark_dict_orange, temp_id)
+    for i in range(8, 14):
+        temp_id = 'temp' + str(i)
 
-    save_path = os.path.join(root_dir, '1-{}.jpg'.format(temp_id))
-    save_img(res, save_path, True)
+        res = fusion(test_file, landmark_dict_orange, temp_id, True)
+
+        save_path = os.path.join(root_dir, '9-{}.jpg'.format(temp_id))
+        save_img(res, save_path, True)
