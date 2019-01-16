@@ -37,9 +37,8 @@ class GetSignature(base.BaseHandler):
         # ).decode()
 
         signature = base64.b64encode(
-            bytes(hmac.new(bytes(up.password, "latin-1"), bytes(self.input('data'), "latin-1"),
-                           digestmod=hashlib.sha1).hexdigest(), "latin-1")
-        ).decode()
+            hmac.new(bytes(up.password, "utf-8"), bytes(self.input('data'), "utf-8"),
+                     digestmod=hashlib.sha1).digest()).decode()
 
         return self.finish(base.rtjson(signature=signature, input=self.input('data'), upyun=up.password))
 
@@ -53,4 +52,5 @@ def make_app():
 if __name__ == "__main__":
     app = make_app()
     app.listen(8080)
+    print('8080')
     tornado.ioloop.IOLoop.current().start()
