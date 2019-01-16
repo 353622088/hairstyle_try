@@ -27,6 +27,9 @@ class HairStyleTry(base.BaseHandler):
         print(user_img)
         return self.finish({"user_img": [1, 2]})
 
+    def post(self):
+        return self.finish(base.rtjson(user=1))
+
 
 class GetSignature(base.BaseHandler):
     def get(self):
