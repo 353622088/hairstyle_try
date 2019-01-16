@@ -31,10 +31,16 @@ class HairStyleTry(base.BaseHandler):
 
 class GetSignature(base.BaseHandler):
     def get(self):
-        print(self.input("data"))
+        # py2+版本
+        # signature = base64.b64encode(
+        #     hmac.new(up.password, self.input('data'),
+        #              digestmod=hashlib.sha1).digest()
+        # ).decode()
+
         signature = base64.b64encode(
-            hmac.new(up.password, self.input('data'), digestmod=hashlib.sha1).digest()
-        ).decode()
+            hmac.new(bytes(up.password, "utf-8"), bytes(self.input('data'), "utf-8"),
+                     digestmod=hashlib.sha1).hexdigest()).decode()
+
         return self.finish(base.rtjson(signature=signature, input=self.input('data'), upyun=up.password))
 
 
