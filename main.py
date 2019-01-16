@@ -6,7 +6,6 @@ created on 2019/1/15
 '''
 import tornado.ioloop
 import tornado.web
-from common import base
 
 import hashlib
 import base64
@@ -38,8 +37,9 @@ class GetSignature(base.BaseHandler):
         # ).decode()
 
         signature = base64.b64encode(
-            hmac.new(bytes(up.password, "utf-8"), bytes(self.input('data'), "utf-8"),
-                     digestmod=hashlib.sha1).hexdigest()).decode()
+            bytes(hmac.new(bytes(up.password, "latin-1"), bytes(self.input('data'), "latin-1"),
+                           digestmod=hashlib.sha1).hexdigest(), "latin-1")
+        ).decode()
 
         return self.finish(base.rtjson(signature=signature, input=self.input('data'), upyun=up.password))
 
