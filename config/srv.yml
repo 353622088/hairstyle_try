@@ -1,0 +1,16 @@
+local:
+  mongo:
+    host: www.sunyihuan.cn
+    port: 27017
+    db: dxq
+    uname: dxq
+    pwd: 123
+
+
+develop:
+  mongo:
+    host: dxq.neuling.cn
+    port: 27017
+    db: dxq
+    uname: dxq
+    pwd: 123

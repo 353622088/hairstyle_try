@@ -20,10 +20,11 @@ def time_cal(func):
 
 
 def landmark72_trans(points):
-    num = len(points)
-    data = np.zeros([num, 2])
-    data[:, 0] = [round(p['x'], 2) for p in points]
-    data[:, 1] = [round(p['y'], 2) for p in points]
+    # num = len(points)
+    # data = np.zeros([num, 2])
+    # data[:, 0] = [round(p['x'], 2) for p in points]
+    # data[:, 1] = [round(p['y'], 2) for p in points]
+    data = [[round(p['x'], 2), round(p['y'], 2)] for p in points]
     return data
 
 
