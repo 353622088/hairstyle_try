@@ -81,16 +81,16 @@ class GetSignature(base.BaseHandler):
 
 
 class Test(base.BaseHandler):
-    async def get(self):
+    def get(self):
         print('in')
-        res = await self.doing()
+        res = self.doing()
         print(res)
         return self.finish('1')
 
-    async def doing(self):
+    def doing(self):
         print('do')
         # self.write('async')  # 返回消息
-        dd = await gen.sleep(1)
+        dd = gen.sleep(1)
         print('do2')
         # raise gen.Return(2)
         return dd
