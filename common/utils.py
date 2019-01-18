@@ -4,7 +4,7 @@ created on 2018/4/2
 
 @author:Dxq
 '''
-from common.config import tx_client, CIFile
+from common.config import tx_client, CIFile, CIUrl
 import numpy as np
 import functools
 import time
@@ -28,14 +28,17 @@ def landmark72_trans(points):
     return data
 
 
-def get_baseInfo_tx(full_path):
+def get_baseInfo_tx(full_path, status='local'):
     '''
     :param full_path: 本地全路径
     :return: dict{"left_eye": array[]*8, "left_eyebrow": array[]*8,
             "face_profile": array[]*21, "nose": array[]*13, "mouth": array[]*22,
             "right_eyebrow": array[]*8, "right_eye": array[]*8}
     '''
-    data = tx_client.face_detect(CIFile(full_path), mode=1)['data']
+    if status == 'local':
+        data = tx_client.face_detect(CIFile(full_path), mode=1)['data']
+    else:
+        data = tx_client.face_detect(CIUrl(full_path), mode=1)['data']
     face_data = data['face'][0]
     landmark72 = face_data['face_shape']
 

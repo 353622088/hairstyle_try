@@ -11,8 +11,11 @@ import numpy as np
 import cv2
 import functools
 import time
-from tornado import gen
+import urllib.request
 from common.utils import get_baseInfo_tx
+
+skin_triangles = scio.loadmat("resource/mat/triangle_matrix_skin_nose.mat")['triangle']
+triangles = scio.loadmat("resource/mat/triangle_matrix.mat")['triangle']
 
 
 def time_cal(func):
@@ -27,11 +30,11 @@ def time_cal(func):
     return wrapper
 
 
-def get_landmark_dict(file_path):
-    landmark_dict = get_baseInfo_tx(file_path)
-    if landmark_dict['roll'] != 0:
-        Image.open(file_path).rotate(-landmark_dict['roll']).save(file_path)
-        landmark_dict = get_baseInfo_tx(file_path)
+def get_landmark_dict(file_path, status='local'):
+    landmark_dict = get_baseInfo_tx(file_path, status)
+    # if landmark_dict['roll'] != 0:
+    #     Image.open(file_path).rotate(-landmark_dict['roll']).save(file_path)
+    #     landmark_dict = get_baseInfo_tx(file_path)
     return landmark_dict
 
 
@@ -138,13 +141,11 @@ def landmark_trans_by_m(points, m):
 
 
 def get_measure_triangle():
-    triangles = scio.loadmat("resource/mat/triangle_matrix.mat")['triangle']
     return [list(t.astype(np.int32)) for t in triangles]
 
 
 def get_measure_triangle_skin():
-    triangles = scio.loadmat("resource/mat/triangle_matrix_skin_nose.mat")['triangle']
-    return [list(t.astype(np.int32)) for t in triangles]
+    return [list(t.astype(np.int32)) for t in skin_triangles]
 
 
 def affine_transform(src, src_tri, dst_tri, size):
@@ -494,6 +495,20 @@ def preprocess(landmark_dict):
     return landmark_dict
 
 
+def cv2ImreadUrlImg(url):
+    resp = urllib.request.urlopen(url)
+    image = np.asarray(bytearray(resp.read()), dtype="uint8")
+    image = cv2.imdecode(image, cv2.IMREAD_COLOR)
+    return image
+
+
+def make_sure(path):
+    fdir = path[:path.rfind('/')]
+    if not os.path.exists(fdir):
+        os.makedirs(fdir)
+    return True
+
+
 def fusion(orange_path, orange_dict, temp_id='temp1'):
     orange_dict = preprocess(orange_dict)
     # orange_dict = get_landmark_dict(orange_path)
@@ -510,9 +525,11 @@ def fusion(orange_path, orange_dict, temp_id='temp1'):
     tree_eye_dis = (tree_right_eye_center - tree_left_eye_center)[0]
     # ---------------------------------------------------------#
     arr_point_orange, list_point_orange = get_points(orange_dict)
-    orange = cv2.imread(orange_path, cv2.IMREAD_COLOR)
-
+    # orange = cv2.imread(orange_path, cv2.IMREAD_COLOR)
+    t0 = time.time()
+    orange = cv2ImreadUrlImg(orange_path)
     orange = smooth_light(orange, arr_point_orange)
+    print(time.time() - t0)
 
     orange, arr_point_orange = toushi_img(orange, arr_point_orange, arr_point_tree, yaw=orange_dict['yaw'])
     # arr_point_orange 90*2
@@ -543,9 +560,12 @@ def fusion(orange_path, orange_dict, temp_id='temp1'):
     # 将Tree进行形变（主要是脸型轮廓）
     tree_trans = tran_src(tree, arr_point_tree, morph_points)
 
+    t2 = time.time()
     rgb_img = merge_img(orange_mask_trans, np.uint8(tree_trans), orange_mask, morph_points, .88)
+    print(time.time() - t2)
     # await gen.sleep(1)
     local_path = "userImg/download/{}_{}_res.png".format(file_name, temp_id)
+    make_sure(local_path)
     save_img(rgb_img, local_path, True)
     print(file_name)
     return local_path

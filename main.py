@@ -16,7 +16,7 @@ from service.file_service import download_url_img
 from service.fusion_service import fusion, get_landmark_dict
 from config import mdb
 from tornado import gen
-import os
+import time
 
 up = upyun.UpYun("qulifa", 'admin', 'jck20020808', timeout=120, endpoint=upyun.ED_AUTO)
 
@@ -33,16 +33,19 @@ class HairStyleTry(base.BaseHandler):
     '''
 
     def post(self):
+        t0 = time.time()
+        # input img and img_dict
         user_img = "http://img.neuling.cn" + self.input("user_img")
-        local_path = download_url_img(user_img)
-        local_dict = get_landmark_dict(local_path)
-        user_img_doc = {"userImgMat": dict(local_dict)}
-        user_img_doc.update({"userImg": user_img, "userImgLocal": local_path})
+        user_img_dict = get_landmark_dict(user_img, 'url')
 
-        userImgId = mdb.user_img.insert(user_img_doc)
-        fusionImg = fusion(local_path, local_dict)
-        # os.remove(local_path)
-        return self.finish(base.rtjson(fusionImg=fusionImg, userImgId=str(userImgId)))
+        user_img_doc = {"userImgMat": dict(user_img_dict)}
+        user_img_doc.update({"userImg": user_img})
+        user_img_id = mdb.user_img.insert(user_img_doc)
+        t1 = time.time()
+        print('get_base_info_waste::', t1 - t0)
+        fusion_img = fusion(user_img, user_img_dict)
+        print('all infer::', time.time() - t0)
+        return self.finish(base.rtjson(fusionImg=fusion_img, userImgId=str(user_img_id)))
 
 
 class ChaneHairStyle(base.BaseHandler):
@@ -51,14 +54,15 @@ class ChaneHairStyle(base.BaseHandler):
         换一换
         :return:
         '''
-        userImgId = self.input("userImgId")
-        tempId = self.input("tempId", "temp1")
-        userImgDoc = mdb.user_img.find_one({"_id": ObjectId(userImgId)})
-        local_path = userImgDoc['userImgLocal']
-        local_dict = userImgDoc['userImgMat']
-        print(local_path)
-        fusionImg = fusion(local_path, local_dict, tempId)
-        return self.finish(base.rtjson(fusionImg=fusionImg))
+        t0 = time.time()
+        user_img_id = self.input("userImgId")
+        temp_id = self.input("tempId", "temp1")
+        user_img_doc = mdb.user_img.find_one({"_id": ObjectId(user_img_id)})
+        user_img = user_img_doc['userImg']
+        user_img_dict = user_img_doc['userImgMat']
+        fusion_img = fusion(user_img, user_img_dict, temp_id)
+        print(time.time())
+        return self.finish(base.rtjson(fusionImg=fusion_img))
 
 
 class GetSignature(base.BaseHandler):
