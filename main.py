@@ -67,8 +67,10 @@ class ChaneHairStyle(base.BaseHandler):
         user_img_doc = mdb.user_img.find_one({"_id": ObjectId(user_img_id)})
         user_local_img = user_img_doc['userLocalImg']
         user_img_dict = user_img_doc['userImgMat']
+        t1 = time.time()
+        print('before', t1 - t0)
         _, fusion_img = fusion(user_local_img, user_img_dict, temp_id)
-        print(time.time() - t0)
+        print('fusion', time.time() - t1)
         return self.finish(base.rtjson(fusionImg=fusion_img, tempId=temp_id))
 
 
