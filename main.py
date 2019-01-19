@@ -112,11 +112,6 @@ def make_app():
 
 
 if __name__ == "__main__":
-    t0 = time.time()
-    headers = {'x-gmkerl-thumb': '/fw/300'}
-    with open('1.png', 'rb') as f:
-        res = up.put('/up/dd.png', f, checksum=True, headers=headers)
-    print(time.time() - t0)
     app = make_app()
     app.listen(8888)
     print('8888')
