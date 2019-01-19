@@ -17,6 +17,7 @@ from service.fusion_service import fusion, get_landmark_dict
 from config import mdb
 from tornado import gen
 import time
+import random
 
 up = upyun.UpYun("qulifa", 'admin', 'jck20020808', timeout=120, endpoint=upyun.ED_AUTO)
 
@@ -43,9 +44,11 @@ class HairStyleTry(base.BaseHandler):
         user_img_id = mdb.user_img.insert(user_img_doc)
         t1 = time.time()
         print('get_base_info_waste::', t1 - t0)
-        fusion_img = fusion(user_img, user_img_dict)
+        temp_list = ['temp1', 'temp2']
+        temp_id = random.sample(temp_list, 1)
+        fusion_img = fusion(user_img, user_img_dict, temp_id)
         print('all infer::', time.time() - t0)
-        return self.finish(base.rtjson(fusionImg=fusion_img, userImgId=str(user_img_id)))
+        return self.finish(base.rtjson(fusionImg=fusion_img, userImgId=str(user_img_id), tempId=temp_id))
 
 
 class ChaneHairStyle(base.BaseHandler):
@@ -56,7 +59,11 @@ class ChaneHairStyle(base.BaseHandler):
         '''
         t0 = time.time()
         user_img_id = self.input("userImgId")
-        temp_id = self.input("tempId", "temp1")
+        temp_old_id = self.input("tempId", "temp1")
+        temp_list = ['temp1', 'temp2']
+        temp_random_id = random.sample(temp_list, 2)
+        temp_id = list(set([temp_old_id]) & set(temp_random_id))[0]
+
         user_img_doc = mdb.user_img.find_one({"_id": ObjectId(user_img_id)})
         user_img = user_img_doc['userImg']
         user_img_dict = user_img_doc['userImgMat']
