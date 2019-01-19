@@ -18,6 +18,7 @@ from config import mdb
 from tornado import gen
 import time
 import random
+import os
 
 up = upyun.UpYun("qulifa", 'admin', 'jck20020808', timeout=120, endpoint=upyun.ED_AUTO)
 
@@ -67,10 +68,14 @@ class ChaneHairStyle(base.BaseHandler):
         user_img_doc = mdb.user_img.find_one({"_id": ObjectId(user_img_id)})
         user_local_img = user_img_doc['userLocalImg']
         user_img_dict = user_img_doc['userImgMat']
-        t1 = time.time()
-        print('before::', t1 - t0)
-        _, fusion_img = fusion(user_local_img, user_img_dict, temp_id)
-        print('fusion::', time.time() - t1)
+
+        file_name = os.path.basename(user_local_img).split('.')[0]
+        fusion_img = "userImg/download/{}/{}_thum.png".format(file_name, temp_id)
+        if not os.path.exists(fusion_img):
+            t1 = time.time()
+            print('before::', t1 - t0)
+            _, fusion_img = fusion(user_local_img, user_img_dict, temp_id)
+            print('fusion::', time.time() - t1)
         return self.finish(base.rtjson(fusionImg=fusion_img, tempId=temp_id))
 
 
