@@ -63,7 +63,7 @@ class ChaneHairStyle(base.BaseHandler):
         temp_old_id = self.input("tempId", "temp1")
         temp_list = ['temp1', 'temp2']
         temp_random_id = random.sample(temp_list, 2)
-        temp_id = list(set([temp_old_id]) & set(temp_random_id))[0]
+        temp_id = list(set(temp_random_id) - set([temp_old_id]))[0]
 
         user_img_doc = mdb.user_img.find_one({"_id": ObjectId(user_img_id)})
         user_img = user_img_doc['userImg']
