@@ -35,3 +35,25 @@ def download_url_img(url):
     # with open(fpath, "wb") as code:
     #     code.write(of.read())
     return fpath
+
+
+def download_user_url_img(url):
+    fpath = 'userImg/download/{}/user.png'.format(createNoncestr())
+
+    fdir = fpath[:fpath.rfind('/')]
+    if not os.path.exists(fdir):
+        os.makedirs(fdir)
+
+    response = requests.get(url, cert=False)
+    # img = Image.open(BytesIO(response.content)).convert("RGB")
+    # img.save(fpath)
+
+    with open(fpath, "wb") as code:
+        code.write(response.content)
+
+    # of = urllib.request.urlopen(url)
+    #
+    # # 下载文件
+    # with open(fpath, "wb") as code:
+    #     code.write(of.read())
+    return fpath

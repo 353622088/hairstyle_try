@@ -12,7 +12,7 @@ import base64
 import hmac
 from common import base
 import upyun
-from service.file_service import download_url_img
+from service.file_service import download_user_url_img
 from service.fusion_service import fusion, get_landmark_dict
 from config import mdb
 from tornado import gen
@@ -38,7 +38,7 @@ class HairStyleTry(base.BaseHandler):
         # input img and img_dict
         user_img = "http://img.neuling.cn" + self.input("user_img")
         user_img_dict = get_landmark_dict(user_img, 'url')
-        user_local_img = download_url_img(user_img)
+        user_local_img = download_user_url_img(user_img)
         user_img_doc = {"userImgMat": dict(user_img_dict)}
         user_img_doc.update({"userImg": user_img, "userLocalImg": user_local_img})
         user_img_id = mdb.user_img.insert(user_img_doc)
