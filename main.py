@@ -47,7 +47,7 @@ class HairStyleTry(base.BaseHandler):
         temp_list = ['temp1', 'temp2']
         temp_id = random.sample(temp_list, 1)[0]
         print(temp_id)
-        fusion_img = fusion(user_img, user_img_dict, temp_id)
+        _, fusion_img = fusion(user_img, user_img_dict, temp_id)
         print('all infer::', time.time() - t0)
         return self.finish(base.rtjson(fusionImg=fusion_img, userImgId=str(user_img_id), tempId=temp_id))
 
@@ -68,7 +68,7 @@ class ChaneHairStyle(base.BaseHandler):
         user_img_doc = mdb.user_img.find_one({"_id": ObjectId(user_img_id)})
         user_img = user_img_doc['userImg']
         user_img_dict = user_img_doc['userImgMat']
-        fusion_img = fusion(user_img, user_img_dict, temp_id)
+        _, fusion_img = fusion(user_img, user_img_dict, temp_id)
         print(time.time() - t0)
         return self.finish(base.rtjson(fusionImg=fusion_img, tempId=temp_id))
 
@@ -112,6 +112,11 @@ def make_app():
 
 
 if __name__ == "__main__":
+    t0 = time.time()
+    headers = {'x-gmkerl-thumb': '/fw/300'}
+    with open('1.png', 'rb') as f:
+        res = up.put('/up/dd.png', f, checksum=True, headers=headers)
+    print(time.time() - t0)
     app = make_app()
     app.listen(8888)
     print('8888')
