@@ -525,9 +525,9 @@ def fusion(orange_path, orange_dict, temp_id='temp1'):
     tree_eye_dis = (tree_right_eye_center - tree_left_eye_center)[0]
     # ---------------------------------------------------------#
     arr_point_orange, list_point_orange = get_points(orange_dict)
-    # orange = cv2.imread(orange_path, cv2.IMREAD_COLOR)
     t0 = time.time()
-    orange = cv2ImreadUrlImg(orange_path)
+    # orange = cv2ImreadUrlImg(orange_path)
+    orange = cv2.imread(orange_path, cv2.IMREAD_COLOR)
     orange = smooth_light(orange, arr_point_orange)
     print(time.time() - t0)
 
@@ -560,12 +560,10 @@ def fusion(orange_path, orange_dict, temp_id='temp1'):
     # 将Tree进行形变（主要是脸型轮廓）
     tree_trans = tran_src(tree, arr_point_tree, morph_points)
 
-    t2 = time.time()
     rgb_img = merge_img(orange_mask_trans, np.uint8(tree_trans), orange_mask, morph_points, .88)
-    print(time.time() - t2)
     # await gen.sleep(1)
-    local_path = "userImg/download/{}_{}_res.png".format(file_name, temp_id)
-    local_thum_path = "userImg/download/{}_{}_thum.png".format(file_name, temp_id)
+    local_path = "userImg/download/{}/{}_res.png".format(file_name, temp_id)
+    local_thum_path = "userImg/download/{}/{}_thum.png".format(file_name, temp_id)
     make_sure(local_path)
     save_img(rgb_img, local_path, True)
     res_img = Image.fromarray(np.uint8(rgb_img[..., [2, 1, 0]]))

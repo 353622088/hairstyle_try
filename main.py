@@ -38,16 +38,15 @@ class HairStyleTry(base.BaseHandler):
         # input img and img_dict
         user_img = "http://img.neuling.cn" + self.input("user_img")
         user_img_dict = get_landmark_dict(user_img, 'url')
-
+        user_local_img = download_url_img(user_img)
         user_img_doc = {"userImgMat": dict(user_img_dict)}
-        user_img_doc.update({"userImg": user_img})
+        user_img_doc.update({"userImg": user_img, "userLocalImg": user_local_img})
         user_img_id = mdb.user_img.insert(user_img_doc)
         t1 = time.time()
         print('get_base_info_waste::', t1 - t0)
         temp_list = ['temp1', 'temp2']
         temp_id = random.sample(temp_list, 1)[0]
-        print(temp_id)
-        _, fusion_img = fusion(user_img, user_img_dict, temp_id)
+        _, fusion_img = fusion(user_local_img, user_img_dict, temp_id)
         print('all infer::', time.time() - t0)
         return self.finish(base.rtjson(fusionImg=fusion_img, userImgId=str(user_img_id), tempId=temp_id))
 
@@ -66,9 +65,9 @@ class ChaneHairStyle(base.BaseHandler):
         temp_id = list(set(temp_random_id) - set([temp_old_id]))[0]
 
         user_img_doc = mdb.user_img.find_one({"_id": ObjectId(user_img_id)})
-        user_img = user_img_doc['userImg']
+        user_local_img = user_img_doc['userLocalImg']
         user_img_dict = user_img_doc['userImgMat']
-        _, fusion_img = fusion(user_img, user_img_dict, temp_id)
+        _, fusion_img = fusion(user_local_img, user_img_dict, temp_id)
         print(time.time() - t0)
         return self.finish(base.rtjson(fusionImg=fusion_img, tempId=temp_id))
 
