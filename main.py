@@ -71,11 +71,11 @@ class ChaneHairStyle(base.BaseHandler):
 
         file_name = os.path.basename(user_local_img).split('.')[0]
         fusion_img = "userImg/download/{}/{}_thum.png".format(file_name, temp_id)
+        t1 = time.time()
+        print('before::', t1 - t0)
         if not os.path.exists(fusion_img):
-            t1 = time.time()
-            print('before::', t1 - t0)
             _, fusion_img = fusion(user_local_img, user_img_dict, temp_id)
-            print('fusion::', time.time() - t1)
+        print('fusion::', time.time() - t1)
         return self.finish(base.rtjson(fusionImg=fusion_img, tempId=temp_id))
 
 
