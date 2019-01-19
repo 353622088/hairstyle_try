@@ -570,7 +570,6 @@ def fusion(orange_path, orange_dict, temp_id='temp1'):
     local_path = "userImg/download/{}/{}_res.png".format(file_name, temp_id)
     local_thum_path = "userImg/download/{}/{}_thum.png".format(file_name, temp_id)
     make_sure(local_path)
-    save_img(rgb_img, local_path, True)
     res_img = Image.fromarray(np.uint8(rgb_img[..., [2, 1, 0]]))
     res_img.save(local_path)
     res_img.thumbnail((500, 500))
