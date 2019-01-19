@@ -68,9 +68,9 @@ class ChaneHairStyle(base.BaseHandler):
         user_local_img = user_img_doc['userLocalImg']
         user_img_dict = user_img_doc['userImgMat']
         t1 = time.time()
-        print('before', t1 - t0)
+        print('before::', t1 - t0)
         _, fusion_img = fusion(user_local_img, user_img_dict, temp_id)
-        print('fusion', time.time() - t1)
+        print('fusion::', time.time() - t1)
         return self.finish(base.rtjson(fusionImg=fusion_img, tempId=temp_id))
 
 

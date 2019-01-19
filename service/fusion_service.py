@@ -510,6 +510,7 @@ def make_sure(path):
 
 
 def fusion(orange_path, orange_dict, temp_id='temp1'):
+    t0 = time.time()
     orange_dict = preprocess(orange_dict)
     # orange_dict = get_landmark_dict(orange_path)
     file_name = os.path.basename(orange_path).split('.')[0]
@@ -525,11 +526,12 @@ def fusion(orange_path, orange_dict, temp_id='temp1'):
     tree_eye_dis = (tree_right_eye_center - tree_left_eye_center)[0]
     # ---------------------------------------------------------#
     arr_point_orange, list_point_orange = get_points(orange_dict)
-    t0 = time.time()
+
     # orange = cv2ImreadUrlImg(orange_path)
     orange = cv2.imread(orange_path, cv2.IMREAD_COLOR)
     orange = smooth_light(orange, arr_point_orange)
-    print(time.time() - t0)
+    t1 = time.time()
+    print('1：：：', t1 - t0)
 
     orange, arr_point_orange = toushi_img(orange, arr_point_orange, arr_point_tree, yaw=orange_dict['yaw'])
     # arr_point_orange 90*2
@@ -561,6 +563,9 @@ def fusion(orange_path, orange_dict, temp_id='temp1'):
     tree_trans = tran_src(tree, arr_point_tree, morph_points)
 
     rgb_img = merge_img(orange_mask_trans, np.uint8(tree_trans), orange_mask, morph_points, .88)
+    t2 = time.time()
+    print('2：：：', t2 - t1)
+
     # await gen.sleep(1)
     local_path = "userImg/download/{}/{}_res.png".format(file_name, temp_id)
     local_thum_path = "userImg/download/{}/{}_thum.png".format(file_name, temp_id)
@@ -570,4 +575,6 @@ def fusion(orange_path, orange_dict, temp_id='temp1'):
     res_img.save(local_path, quality=100)
     res_img.thumbnail((500, 500))
     res_img.save(local_thum_path, quality=100)
+    t3 = time.time()
+    print('3：：：', t3 - t2)
     return local_path, local_thum_path
