@@ -45,7 +45,7 @@ class HairStyleTry(base.BaseHandler):
         t1 = time.time()
         print('get_base_info_waste::', t1 - t0)
         temp_list = ['temp1', 'temp2']
-        temp_id = random.sample(temp_list, 1)
+        temp_id = random.sample(temp_list, 1)[0]
         print(temp_id)
         fusion_img = fusion(user_img, user_img_dict, temp_id)
         print('all infer::', time.time() - t0)
