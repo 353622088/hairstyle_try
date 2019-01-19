@@ -572,9 +572,9 @@ def fusion(orange_path, orange_dict, temp_id='temp1'):
     make_sure(local_path)
     save_img(rgb_img, local_path, True)
     res_img = Image.fromarray(np.uint8(rgb_img[..., [2, 1, 0]]))
-    res_img.save(local_path, quality=100)
+    res_img.save(local_path)
     res_img.thumbnail((500, 500))
-    res_img.save(local_thum_path, quality=100)
+    res_img.save(local_thum_path)
     t3 = time.time()
     print('3：：：', t3 - t2)
     return local_path, local_thum_path
