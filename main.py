@@ -70,7 +70,7 @@ class ChaneHairStyle(base.BaseHandler):
         user_img_dict = user_img_doc['userImgMat']
         fusion_img = fusion(user_img, user_img_dict, temp_id)
         print(time.time() - t0)
-        return self.finish(base.rtjson(fusionImg=fusion_img))
+        return self.finish(base.rtjson(fusionImg=fusion_img, tempId=temp_id))
 
 
 class GetSignature(base.BaseHandler):
