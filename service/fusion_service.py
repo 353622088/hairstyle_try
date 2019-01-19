@@ -13,6 +13,7 @@ import functools
 import time
 import urllib.request
 from common.utils import get_baseInfo_tx
+import multiprocessing
 
 skin_triangles = scio.loadmat("resource/mat/triangle_matrix_skin_nose.mat")['triangle']
 triangles = scio.loadmat("resource/mat/triangle_matrix.mat")['triangle']
@@ -510,6 +511,8 @@ def make_sure(path):
 
 
 def fusion(orange_path, orange_dict, temp_id='temp1'):
+    pool = multiprocessing.Pool(processes=2)
+
     t0 = time.time()
     orange_dict = preprocess(orange_dict)
     # orange_dict = get_landmark_dict(orange_path)
@@ -533,7 +536,7 @@ def fusion(orange_path, orange_dict, temp_id='temp1'):
     t1 = time.time()
     print('1：：：', t1 - t0)
 
-    orange, arr_point_orange = toushi_img(orange, arr_point_orange, arr_point_tree, yaw=orange_dict['yaw'])
+    # orange, arr_point_orange = toushi_img(orange, arr_point_orange, arr_point_tree, yaw=orange_dict['yaw'])
     # arr_point_orange 90*2
     orange_left_eye_center = arr_point_orange[88]
     orange_right_eye_center = arr_point_orange[89]
@@ -554,14 +557,11 @@ def fusion(orange_path, orange_dict, temp_id='temp1'):
 
     # 矫正后的orange特征点
     arr_point_orange_trans = landmark_trans_by_m(arr_point_orange, orange2tree_matrix)
-
     # 将orange目标区域扣取1出来，进行比例重组
     orange_mask_trans, morph_points, orange_mask = morph_img(tree, arr_point_tree, orange_trans, arr_point_orange_trans,
                                                              alpha=[.2, .2, .2, .85])  # 眼睛，脸，other
-
     # 将Tree进行形变（主要是脸型轮廓）
     tree_trans = tran_src(tree, arr_point_tree, morph_points)
-
     rgb_img = merge_img(orange_mask_trans, np.uint8(tree_trans), orange_mask, morph_points, .88)
     t2 = time.time()
     print('2：：：', t2 - t1)
@@ -571,9 +571,19 @@ def fusion(orange_path, orange_dict, temp_id='temp1'):
     local_thum_path = "userImg/download/{}/{}_thum.png".format(file_name, temp_id)
     make_sure(local_path)
     res_img = Image.fromarray(np.uint8(rgb_img[..., [2, 1, 0]]))
-    res_img.save(local_path)
-    res_img.thumbnail((500, 500))
-    res_img.save(local_thum_path)
+
+    def func1():
+        res_img.save(local_path)
+
+    pool.apply_async(func1, (1,))
+
+    def func2():
+        res_img.thumbnail((500, 500))
+        res_img.save(local_thum_path)
+
+    pool.apply_async(func2, (1,))
+    pool.close()
+    pool.join()
     t3 = time.time()
     print('3：：：', t3 - t2)
     return local_path, local_thum_path
