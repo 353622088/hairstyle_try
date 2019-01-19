@@ -38,7 +38,8 @@ def download_url_img(url):
 
 
 def download_user_url_img(url):
-    fpath = 'userImg/download/{}/user.png'.format(createNoncestr())
+    random_name = createNoncestr()
+    fpath = 'userImg/download/{}/{}.png'.format(random_name, random_name)
 
     fdir = fpath[:fpath.rfind('/')]
     if not os.path.exists(fdir):
