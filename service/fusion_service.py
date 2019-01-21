@@ -13,7 +13,6 @@ import functools
 import time
 import urllib.request
 from common.utils import get_baseInfo_tx
-import multiprocessing
 
 skin_triangles = scio.loadmat("resource/mat/triangle_matrix_skin_nose.mat")['triangle']
 triangles = scio.loadmat("resource/mat/triangle_matrix.mat")['triangle']
@@ -511,8 +510,6 @@ def make_sure(path):
 
 
 def fusion(orange_path, orange_dict, temp_id='temp1'):
-    pool = multiprocessing.Pool(processes=2)
-
     t0 = time.time()
     orange_dict = preprocess(orange_dict)
     # orange_dict = get_landmark_dict(orange_path)
@@ -572,18 +569,11 @@ def fusion(orange_path, orange_dict, temp_id='temp1'):
     make_sure(local_path)
     res_img = Image.fromarray(np.uint8(rgb_img[..., [2, 1, 0]]))
 
-    def func1():
-        res_img.save(local_path)
+    res_img.save(local_path)
 
-    pool.apply_async(func1, (1,))
+    res_img.thumbnail((500, 500))
+    res_img.save(local_thum_path)
 
-    def func2():
-        res_img.thumbnail((500, 500))
-        res_img.save(local_thum_path)
-
-    pool.apply_async(func2, (1,))
-    pool.close()
-    pool.join()
     t3 = time.time()
     print('3：：：', t3 - t2)
     return local_path, local_thum_path

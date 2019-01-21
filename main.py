@@ -42,11 +42,14 @@ class HairStyleTry(base.BaseHandler):
         user_local_img = download_user_url_img(user_img)
         user_img_doc = {"userImgMat": dict(user_img_dict)}
         user_img_doc.update({"userImg": user_img, "userLocalImg": user_local_img})
-        user_img_id = mdb.user_img.insert(user_img_doc)
+
         t1 = time.time()
         print('get_base_info_waste::', t1 - t0)
-        temp_list = ['temp1', 'temp2']
+        temp_list = ['temp1', 'temp2', 'temp3', 'temp4', 'temp5']
         temp_id = random.sample(temp_list, 1)[0]
+        user_img_doc.update({"tempIds": [temp_id]})
+
+        user_img_id = mdb.user_img.insert(user_img_doc)
         _, fusion_img = fusion(user_local_img, user_img_dict, temp_id)
         print('all infer::', time.time() - t0)
         return self.finish(base.rtjson(fusionImg=fusion_img, userImgId=str(user_img_id), tempId=temp_id))
@@ -60,14 +63,21 @@ class ChaneHairStyle(base.BaseHandler):
         '''
         t0 = time.time()
         user_img_id = self.input("userImgId")
-        temp_old_id = self.input("tempId", "temp1")
-        temp_list = ['temp1', 'temp2']
-        temp_random_id = random.sample(temp_list, 2)
-        temp_id = list(set(temp_random_id) - set([temp_old_id]))[0]
 
         user_img_doc = mdb.user_img.find_one({"_id": ObjectId(user_img_id)})
         user_local_img = user_img_doc['userLocalImg']
         user_img_dict = user_img_doc['userImgMat']
+        temp_old_ids = user_img_doc['tempIds']
+
+        # 一对一换发型
+        temp_id = self.input("tempId", "")
+
+        if not temp_id:
+            # 随机换一换
+            temp_list = ['temp1', 'temp2', 'temp3', 'temp4', 'temp5']
+            index = len(set(temp_old_ids)) % len(temp_list)
+            temp_list_del = list(set(temp_list) - set(temp_old_ids))
+            temp_id = random.sample(temp_list_del, 1)[0] if len(temp_list_del) > 0 else temp_old_ids[index]
 
         file_name = os.path.basename(user_local_img).split('.')[0]
         fusion_img = "userImg/download/{}/{}_thum.png".format(file_name, temp_id)
@@ -75,6 +85,9 @@ class ChaneHairStyle(base.BaseHandler):
         print('before::', t1 - t0)
         if not os.path.exists(fusion_img):
             _, fusion_img = fusion(user_local_img, user_img_dict, temp_id)
+        temp_old_ids.append(temp_id)
+
+        mdb.user_img.update_one({"_id": ObjectId(user_img_id)}, {"$set": {"tempIds": temp_old_ids}})
         print('fusion::', time.time() - t1)
         return self.finish(base.rtjson(fusionImg=fusion_img, tempId=temp_id))
 
