@@ -84,7 +84,8 @@ class ChaneHairStyle(base.BaseHandler):
         t1 = time.time()
         print('before::', t1 - t0)
         if not os.path.exists(fusion_img):
-            _, fusion_img = fusion(user_local_img, user_img_dict, temp_id)
+            # _, fusion_img = fusion(user_local_img, user_img_dict, temp_id)
+            fusion_img, _ = fusion(user_local_img, user_img_dict, temp_id)
         temp_old_ids.append(temp_id)
 
         mdb.user_img.update_one({"_id": ObjectId(user_img_id)}, {"$set": {"tempIds": temp_old_ids}})
