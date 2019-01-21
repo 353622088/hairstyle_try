@@ -75,7 +75,7 @@ class ChaneHairStyle(base.BaseHandler):
         if not temp_id:
             # 随机换一换
             temp_list = ['temp1', 'temp2', 'temp3', 'temp4', 'temp5']
-            index = len(set(temp_old_ids)) % len(temp_list)
+            index = len(temp_old_ids) % len(temp_list)
             temp_list_del = list(set(temp_list) - set(temp_old_ids))
             temp_id = random.sample(temp_list_del, 1)[0] if len(temp_list_del) > 0 else temp_old_ids[index]
 
